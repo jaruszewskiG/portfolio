@@ -23,7 +23,12 @@ class MainScene extends Phaser.Scene {
     this.green = this.physics.add.image(300, 340, 'greenBox').setCollideWorldBounds(true);
 
     this.greenKeys = this.input.keyboard.createCursorKeys();
-    this.blueKeys = this.input.keyboard.addKeys('a,s,d,w') as Phaser.Types.Input.Keyboard.CursorKeys;
+    this.blueKeys = this.input.keyboard.addKeys({
+      'up': Phaser.Input.Keyboard.KeyCodes.W,
+      'left': Phaser.Input.Keyboard.KeyCodes.A,
+      'down': Phaser.Input.Keyboard.KeyCodes.S,
+      'right': Phaser.Input.Keyboard.KeyCodes.D,
+    }) as Phaser.Types.Input.Keyboard.CursorKeys;
 
     this.physics.add.collider(this.green, this.blue, undefined);
   }
@@ -37,6 +42,8 @@ class MainScene extends Phaser.Scene {
       this.blue.setVelocityY(-200);
     } else if (this.blueKeys.down.isDown) {
       this.blue.setVelocityY(200);
+    } else {
+      this.blue.setVelocity(0);
     }
 
     if (this.greenKeys.left.isDown) {
@@ -47,6 +54,8 @@ class MainScene extends Phaser.Scene {
       this.green.setVelocityY(-200);
     } else if (this.greenKeys.down.isDown) {
       this.green.setVelocityY(200);
+    } else {
+      this.green.setVelocity(0);
     }
   }
 }
