@@ -10,7 +10,8 @@ class MainScene extends Phaser.Scene {
   bombs:  Phaser.Physics.Arcade.Group;
   score: number = 0;
   scoreText: Phaser.GameObjects.Text;
-  gameOver: boolean = false;
+  isGameOver: boolean = false;
+  gameOverText: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'main' });
@@ -38,7 +39,8 @@ class MainScene extends Phaser.Scene {
   }
 
   override update(): void {
-    if (this.gameOver) {
+    if (this.isGameOver) {
+      this.createGameOverText();
       return;
     }
 
@@ -108,7 +110,7 @@ class MainScene extends Phaser.Scene {
       (star as Phaser.Physics.Arcade.Sprite).disableBody(true, true);
   
       this.score += 10;
-      this.scoreText.setText('Score: ' + this.score);
+      this.scoreText.setText('SCORE: ' + this.score);
 
       if (this.stars.countActive(true) === 0) {
         this.stars.children.iterate(star => {
@@ -134,15 +136,19 @@ class MainScene extends Phaser.Scene {
   }
 
   private createScore(): void {
-    this.scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', color: '#000' });
+    this.scoreText = this.add.text(16, 16, 'SCORE: 0', { fontSize: '32px', color: 'black', stroke: 'black', strokeThickness: 2 });
+  }
+
+  private createGameOverText(): void {
+    this.gameOverText = this.add.text(220, 270, 'GAME OVER', { fontSize: '64px', color: 'red', stroke: 'red', strokeThickness: 3 });
   }
 
   private createBombs(): void {
-    const hitBomb = (player: Phaser.GameObjects.GameObject, star: Phaser.GameObjects.GameObject): void => {
+    const hitBomb = (): void => {
       this.physics.pause();
       this.player.setTint(0xff0000);
       this.player.anims.play('turn');
-      this.gameOver = true;
+      this.isGameOver = true;
     }
 
     this.bombs = this.physics.add.group();
