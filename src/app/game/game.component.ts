@@ -7,8 +7,10 @@ class MainScene extends Phaser.Scene {
   player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   stars: Phaser.Physics.Arcade.Group;
+  bombs:  Phaser.Physics.Arcade.Group;
   score: number = 0;
   scoreText: Phaser.GameObjects.Text;
+  gameOver: boolean = false;
 
   constructor() {
     super({ key: 'main' });
@@ -30,20 +32,26 @@ class MainScene extends Phaser.Scene {
     this.createPlayer();
     this.createStars();
     this.createScore();
+    this.createBombs();
 
     this.setupControls();
   }
 
   override update(): void {
+    if (this.gameOver)
+    {
+      return;
+    }
+
     if (this.cursors.left.isDown)
     {
-      this.player.setVelocityX(-160);
+      this.player.setVelocityX(-320);
     
       this.player.anims.play('left', true);
     }
     else if (this.cursors.right.isDown)
     {
-      this.player.setVelocityX(160);
+      this.player.setVelocityX(320);
     
       this.player.anims.play('right', true);
     }
@@ -104,6 +112,21 @@ class MainScene extends Phaser.Scene {
   }
 
   private createStars(): void {
+    const collectStar = (player: Phaser.GameObjects.GameObject, star: Phaser.GameObjects.GameObject): void => {
+      (star as Phaser.Physics.Arcade.Sprite).disableBody(true, true);
+  
+      this.score += 10;
+      this.scoreText.setText('Score: ' + this.score);
+
+      if (this.stars.countActive(true) === 0) {
+        this.stars.children.iterate(star => {
+          (star as Phaser.Physics.Arcade.Sprite).enableBody(true, (star as Phaser.Physics.Arcade.Sprite).x, 0, true, true);
+        });
+
+        this.createBomb();
+      }
+    }
+
     this.stars = this.physics.add.group({
       key: 'star',
       repeat: 11,
@@ -115,18 +138,33 @@ class MainScene extends Phaser.Scene {
     });
 
     this.physics.add.collider(this.stars, this.platforms);
-    this.physics.add.overlap(this.player, this.stars, this.collectStar, undefined, this);
+    this.physics.add.overlap(this.player, this.stars, collectStar, undefined, this);
   }
 
   private createScore(): void {
     this.scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', color: '#000' });
   }
 
-  private collectStar(player: Phaser.GameObjects.GameObject, star: Phaser.GameObjects.GameObject): void {
-    (star as Phaser.Physics.Arcade.Sprite).disableBody(true, true);
+  private createBombs(): void {
+    const hitBomb = (player: Phaser.GameObjects.GameObject, star: Phaser.GameObjects.GameObject): void => {
+      this.physics.pause();
+      this.player.setTint(0xff0000);
+      this.player.anims.play('turn');
+      this.gameOver = true;
+    }
 
-    this.score += 10;
-    this.scoreText.setText('Score: ' + this.score);
+    this.bombs = this.physics.add.group();
+    this.physics.add.collider(this.bombs, this.platforms);
+    this.physics.add.collider(this.player, this.bombs, hitBomb, undefined, this);
+  }
+
+  private createBomb(): void {
+    const x = (this.player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+    const bomb = this.bombs.create(x, 16, 'bomb');
+    bomb.setBounce(1);
+    bomb.setCollideWorldBounds(true);
+    bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
   }
 
   private setupControls(): void {
