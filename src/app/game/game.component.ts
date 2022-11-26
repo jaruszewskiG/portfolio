@@ -38,32 +38,24 @@ class MainScene extends Phaser.Scene {
   }
 
   override update(): void {
-    if (this.gameOver)
-    {
+    if (this.gameOver) {
       return;
     }
 
-    if (this.cursors.left.isDown)
-    {
+    if (this.cursors.left.isDown) {
       this.player.setVelocityX(-320);
-    
       this.player.anims.play('left', true);
     }
-    else if (this.cursors.right.isDown)
-    {
+    else if (this.cursors.right.isDown) {
       this.player.setVelocityX(320);
-    
       this.player.anims.play('right', true);
-    }
-    else
+    } else
     {
       this.player.setVelocityX(0);
-    
       this.player.anims.play('turn');
     }
     
-    if (this.cursors.up.isDown && this.player.body.touching.down)
-    {
+    if (this.cursors.up.isDown && this.player.body.touching.down) {
       this.player.setVelocityY(-330);
     }
   }
