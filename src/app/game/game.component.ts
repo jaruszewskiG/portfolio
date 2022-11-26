@@ -7,6 +7,8 @@ class MainScene extends Phaser.Scene {
   player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   stars: Phaser.Physics.Arcade.Group;
+  score: number = 0;
+  scoreText: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'main' });
@@ -27,6 +29,7 @@ class MainScene extends Phaser.Scene {
     this.createPlatforms();
     this.createPlayer();
     this.createStars();
+    this.createScore();
 
     this.setupControls();
   }
@@ -115,8 +118,15 @@ class MainScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.stars, this.collectStar, undefined, this);
   }
 
+  private createScore(): void {
+    this.scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', color: '#000' });
+  }
+
   private collectStar(player: Phaser.GameObjects.GameObject, star: Phaser.GameObjects.GameObject): void {
     (star as Phaser.Physics.Arcade.Sprite).disableBody(true, true);
+
+    this.score += 10;
+    this.scoreText.setText('Score: ' + this.score);
   }
 
   private setupControls(): void {
