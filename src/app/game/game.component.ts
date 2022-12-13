@@ -2,10 +2,12 @@ import { Component, OnInit } from '@angular/core';
 
 import Phaser from 'phaser';
 
-class MainScene extends Phaser.Scene {
+import { Player } from './game-objects/player';
+import { IMainScene } from './models/main-scene.model';
+
+class MainScene extends Phaser.Scene implements IMainScene {
   platforms: Phaser.Physics.Arcade.StaticGroup;
-  player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-  cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+  player: Player;
   stars: Phaser.Physics.Arcade.Group;
   bombs:  Phaser.Physics.Arcade.Group;
   score: number = 0;
@@ -25,17 +27,16 @@ class MainScene extends Phaser.Scene {
     this.load.image('star', 'assets/images/star.png');
     this.load.image('bomb', 'assets/images/bomb.png');
     this.load.spritesheet('dude', 'assets/images/dude.png', { frameWidth: 32, frameHeight: 48 });
+    this.load.atlas('Biker', 'assets/images/Biker/Biker.png', 'assets/images/Biker/Biker.json');
   }
 
   create(): void {
     this.createBackground();
     this.createPlatforms();
-    this.createPlayer();
+    this.player = new Player(this, 100, 150);
     this.createStars();
     this.createScore();
     this.createBombs();
-
-    this.setupControls();
   }
 
   override update(): void {
@@ -44,22 +45,7 @@ class MainScene extends Phaser.Scene {
       return;
     }
 
-    if (this.cursors.left.isDown) {
-      this.player.setVelocityX(-320);
-      this.player.anims.play('left', true);
-    }
-    else if (this.cursors.right.isDown) {
-      this.player.setVelocityX(320);
-      this.player.anims.play('right', true);
-    } else
-    {
-      this.player.setVelocityX(0);
-      this.player.anims.play('turn');
-    }
-    
-    if (this.cursors.up.isDown && this.player.body.touching.down) {
-      this.player.setVelocityY(-330);
-    }
+    this.player.update();
   }
 
   private createBackground(): void {
@@ -74,35 +60,6 @@ class MainScene extends Phaser.Scene {
     this.platforms.create(600, 400, 'ground');
     this.platforms.create(50, 250, 'ground');
     this.platforms.create(750, 220, 'ground');
-  }
-
-  private createPlayer(): void {
-    this.player = this.physics.add.sprite(100, 450, 'dude');
-
-    this.player.setBounce(0.2);
-    this.player.setCollideWorldBounds(true);
-
-    this.anims.create({
-      key: 'left',
-      frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
-      frameRate: 10,
-      repeat: -1
-    });
-  
-    this.anims.create({
-      key: 'turn',
-      frames: [ { key: 'dude', frame: 4 } ],
-      frameRate: 20
-    });
-    
-    this.anims.create({
-      key: 'right',
-      frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
-      frameRate: 10,
-      repeat: -1
-    });
-
-    this.physics.add.collider(this.player, this.platforms);
   }
 
   private createStars(): void {
@@ -146,8 +103,7 @@ class MainScene extends Phaser.Scene {
   private createBombs(): void {
     const hitBomb = (): void => {
       this.physics.pause();
-      this.player.setTint(0xff0000);
-      this.player.anims.play('turn');
+      this.player.die();
       this.isGameOver = true;
     }
 
@@ -163,10 +119,6 @@ class MainScene extends Phaser.Scene {
     bomb.setBounce(1);
     bomb.setCollideWorldBounds(true);
     bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
-  }
-
-  private setupControls(): void {
-    this.cursors = this.input.keyboard.createCursorKeys();
   }
 }
 
@@ -191,7 +143,7 @@ export class GameComponent implements OnInit {
       physics: {
         default: 'arcade',
         arcade: {
-          gravity: { y: 300 },
+          gravity: { y: 600 },
           debug: false,
         }
       }
