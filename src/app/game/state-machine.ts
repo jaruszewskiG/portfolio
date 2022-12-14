@@ -15,12 +15,12 @@ export default class StateMachine {
 		this.context = context;
 	}
 
-  addState(name: string, config?: { onEnter?: () => void, onUpdate?: (delta: number) => void, onExit?: () => void }) {
-    this.states.set(name, {
-      name,
-      onEnter: config?.onEnter?.bind(this.context),
-      onUpdate: config?.onUpdate?.bind(this.context),
-      onExit: config?.onExit?.bind(this.context),
+  addState(config: IState) {
+    this.states.set(config.name, {
+      name: config.name,
+      onEnter: config.onEnter?.bind(this.context),
+      onUpdate: config.onUpdate?.bind(this.context),
+      onExit: config.onExit?.bind(this.context),
     });
 
     return this;

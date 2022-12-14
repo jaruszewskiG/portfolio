@@ -87,15 +87,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private setupStateMachine(): void {
     this.stateMachine = new StateMachine(this, 'player');
     this.stateMachine
-      .addState(PlayerActions.IDLE, {
+      .addState({
+        name: PlayerActions.IDLE,
         onEnter: this.onIdleEnter,
         onUpdate: this.onIdleUpdate,
       })
-      .addState(PlayerActions.RUN, {
+      .addState({
+        name: PlayerActions.RUN,
         onEnter: this.onRunEnter,
         onUpdate: this.onRunUpdate
       })
-      .addState(PlayerActions.KICK, {
+      .addState({
+        name: PlayerActions.KICK, 
         onEnter: this.onKickEnter,
       })
 
