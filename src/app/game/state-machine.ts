@@ -15,7 +15,7 @@ export default class StateMachine {
 		this.context = context;
 	}
 
-  addState(config: IState) {
+  addState(config: IState): StateMachine {
     this.states.set(config.name, {
       name: config.name,
       onEnter: config.onEnter?.bind(this.context),
@@ -26,7 +26,7 @@ export default class StateMachine {
     return this;
   }
 
-  setState(name: string) {
+  setState(name: string): void {
     if (!this.states.has(name)) {
       console.warn(`Tried to change to unknown state: ${name}`);
       return;
@@ -58,7 +58,7 @@ export default class StateMachine {
     this.isChangingState = false;
   }
 
-  update(delta: number) {
+  update(delta: number): void {
     if (this.changeStateQueue.length > 0) {
       this.setState(this.changeStateQueue.shift()!);
       return;
@@ -69,7 +69,7 @@ export default class StateMachine {
     }
   }
 
-  isCurrentState(name: string){
+  isCurrentState(name: string): boolean {
 		return this.currentState?.name === name;
 	}
 }
