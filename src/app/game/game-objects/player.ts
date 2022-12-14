@@ -29,10 +29,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   
   public override update(time: number, delta: number) {
     this.stateMachine.update(delta);
-    
-    if (this.cursors.up.isDown && this.body.touching.down) {
-      this.setVelocityY(-750);
-    }
   }
   
   public die(): void {
@@ -44,7 +40,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private setupPlayer(): void {
     this.scene.physics.world.enable(this);
     this.scene.add.existing(this);
-    this.setBounce(0.2);
   }
   
   private setupAnimations(): void {
@@ -101,6 +96,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         name: PlayerActions.KICK, 
         onEnter: this.onKickEnter,
       })
+      .addState({
+        name: PlayerActions.JUMP,
+        onEnter: this.onJumpEnter,
+        onUpdate: this.onJumpUpdate
+      })
+      .addState({
+        name: PlayerActions.FALL,
+        onUpdate: this.onFallUpdate
+      })
 
     this.stateMachine.setState(PlayerActions.IDLE);
   }
@@ -116,6 +120,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 		} else if (this.cursors.shift.isDown) {
 			this.stateMachine.setState(PlayerActions.KICK);
 		}
+
+    if (this.cursors.up.isDown && this.body.touching.down) {
+      this.stateMachine.setState(PlayerActions.JUMP);
+    } else if (this.body.velocity.y > 50 && !this.body.touching.down) {
+      this.stateMachine.setState(PlayerActions.FALL);
+    }
   }
 
   private onRunEnter(): void {
@@ -134,6 +144,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.stateMachine.setState(PlayerActions.IDLE);
     }
+
+    if (this.cursors.up.isDown && this.body.touching.down) {
+      this.stateMachine.setState(PlayerActions.JUMP);
+    } else if (this.body.velocity.y > 50 && !this.body.touching.down) {
+      this.stateMachine.setState(PlayerActions.FALL);
+    }
   }
 
   private onKickEnter(): void {
@@ -143,5 +159,61 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private setupAnimationListeners(): void {
     this.on(`${Phaser.Animations.Events.ANIMATION_COMPLETE}-${PlayerActions.KICK}`, () => this.stateMachine.setState(PlayerActions.IDLE));
+  }
+
+  private onJumpEnter(): void {
+    this.setVelocityY(-750);
+  }
+
+  private onJumpUpdate(): void {
+    if (this.body.touching.down) {
+      this.stateMachine.setState(PlayerActions.IDLE);
+    }
+
+    const jumpFramePrefix = `${capitalizeString(PlayerActions.JUMP)}_`;
+
+    if (this.body.velocity.y < 0) {
+      this.setFrame(`${jumpFramePrefix}1`);
+    } else if (this.body.velocity.y < 150) {
+      this.setFrame(`${jumpFramePrefix}2`);
+    } else if (this.body.velocity.y < 400) {
+      this.setFrame(`${jumpFramePrefix}3`);
+    } else {
+      this.setFrame(`${jumpFramePrefix}4`);
+    }
+
+    if (this.cursors.left.isDown) {
+      this.setVelocityX(-300);
+      this.flipX = true;
+    } else if (this.cursors.right.isDown) {
+      this.setVelocityX(300);
+      this.flipX = false;
+    } else {
+      this.setVelocityX(0);
+    }
+  }
+
+  private onFallUpdate(): void {
+    if (this.body.touching.down) {
+      this.stateMachine.setState(PlayerActions.IDLE);
+    }
+
+    const fallFramePrefix = `${capitalizeString(PlayerActions.JUMP)}_`;
+
+    if (this.body.velocity.y < 400) {
+      this.setFrame(`${fallFramePrefix}3`);
+    } else {
+      this.setFrame(`${fallFramePrefix}4`);
+    }
+
+    if (this.cursors.left.isDown) {
+      this.setVelocityX(-300);
+      this.flipX = true;
+    } else if (this.cursors.right.isDown) {
+      this.setVelocityX(300);
+      this.flipX = false;
+    } else {
+      this.setVelocityX(0);
+    }
   }
 }
