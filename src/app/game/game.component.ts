@@ -39,13 +39,13 @@ class MainScene extends Phaser.Scene implements IMainScene {
     this.createBombs();
   }
 
-  override update(): void {
+  override update(time: number, delta: number): void {
     if (this.isGameOver) {
       this.createGameOverText();
       return;
     }
 
-    this.player.update();
+    this.player.update(time, delta);
   }
 
   private createBackground(): void {
