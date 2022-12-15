@@ -167,7 +167,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private onJumpUpdate(): void {
     if (this.body.touching.down) {
-      this.stateMachine.setState(PlayerActions.IDLE);
+      if (this.cursors.left.isDown || this.cursors.right.isDown) {
+        this.stateMachine.setState(PlayerActions.RUN);
+      } else {
+        this.stateMachine.setState(PlayerActions.IDLE);
+      }
     }
 
     const jumpFramePrefix = `${capitalizeString(PlayerActions.JUMP)}_`;
@@ -195,7 +199,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private onFallUpdate(): void {
     if (this.body.touching.down) {
-      this.stateMachine.setState(PlayerActions.IDLE);
+      if (this.cursors.left.isDown || this.cursors.right.isDown) {
+        this.stateMachine.setState(PlayerActions.RUN);
+      } else {
+        this.stateMachine.setState(PlayerActions.IDLE);
+      }
     }
 
     const fallFramePrefix = `${capitalizeString(PlayerActions.JUMP)}_`;
