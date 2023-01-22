@@ -1,5 +1,12 @@
 #gameContainer {
-    overflow: hidden;
-    width: 90vh;
-    height: 90vh;
-  }
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Not sure that last part is actually usefull */
+  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

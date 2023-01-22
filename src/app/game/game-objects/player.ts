@@ -4,7 +4,6 @@ import { PlayerActions } from "../models/player.model";
 import StateMachine from "../state-machine";
 
 const KEY: string = 'Biker';
-const DIE_TINT = 0xff0000;
 const DEFAULT_FRAME_RATE = 10;
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -25,6 +24,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setAcceleration(0, 800);
     this.setupStateMachine();
     this.setupAnimationListeners();
+
+    this.setOrigin(0.5, 1);
   }
   
   public override update(time: number, delta: number) {
@@ -32,9 +33,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   
   public die(): void {
-    this.setTint(DIE_TINT);
     this.anims.play(PlayerActions.DEATH);
-    this.setDisplayOrigin(this.displayOriginX, this.displayOriginY - 40);
+    this.setVelocityY(200);
   }
   
   private setupPlayer(): void {
@@ -121,9 +121,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 			this.stateMachine.setState(PlayerActions.KICK);
 		}
 
-    if (this.cursors.up.isDown && this.body.touching.down) {
+    if (this.cursors.up.isDown && (this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       this.stateMachine.setState(PlayerActions.JUMP);
-    } else if (this.body.velocity.y > 50 && !this.body.touching.down) {
+    } else if (this.body.velocity.y > 100 && !(this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       this.stateMachine.setState(PlayerActions.FALL);
     }
   }
@@ -145,9 +145,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.stateMachine.setState(PlayerActions.IDLE);
     }
 
-    if (this.cursors.up.isDown && this.body.touching.down) {
+    if (this.cursors.up.isDown && (this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       this.stateMachine.setState(PlayerActions.JUMP);
-    } else if (this.body.velocity.y > 50 && !this.body.touching.down) {
+    } else if (this.body.velocity.y > 50 && !(this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       this.stateMachine.setState(PlayerActions.FALL);
     }
   }
@@ -166,7 +166,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private onJumpUpdate(): void {
-    if (this.body.touching.down) {
+    if ((this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       if (this.cursors.left.isDown || this.cursors.right.isDown) {
         this.stateMachine.setState(PlayerActions.RUN);
       } else {
@@ -198,7 +198,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private onFallUpdate(): void {
-    if (this.body.touching.down) {
+    if ((this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       if (this.cursors.left.isDown || this.cursors.right.isDown) {
         this.stateMachine.setState(PlayerActions.RUN);
       } else {

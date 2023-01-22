@@ -6,7 +6,7 @@ import { Player } from './game-objects/player';
 import { IMainScene } from './models/main-scene.model';
 
 class MainScene extends Phaser.Scene implements IMainScene {
-  platforms: Phaser.Physics.Arcade.StaticGroup;
+  platforms: Phaser.Tilemaps.TilemapLayer;
   player: Player;
   stars: Phaser.Physics.Arcade.Group;
   bombs:  Phaser.Physics.Arcade.Group;
@@ -14,6 +14,9 @@ class MainScene extends Phaser.Scene implements IMainScene {
   scoreText: Phaser.GameObjects.Text;
   isGameOver: boolean = false;
   gameOverText: Phaser.GameObjects.Text;
+  tilemap: Phaser.Tilemaps.Tilemap;
+  tileset: Phaser.Tilemaps.Tileset;
+
 
   constructor() {
     super({ key: 'main' });
@@ -22,20 +25,28 @@ class MainScene extends Phaser.Scene implements IMainScene {
   preload(): void {
     this.load.setBaseURL('');
 
-    this.load.image('sky', 'assets/images/sky.png');
+    this.load.image('sky', 'assets/images/Background.png');
     this.load.image('ground', 'assets/images/platform.png');
     this.load.image('star', 'assets/images/star.png');
     this.load.image('bomb', 'assets/images/bomb.png');
     this.load.atlas('Biker', 'assets/images/Biker/Biker.png', 'assets/images/Biker/Biker.json');
+
+    this.load.image('tiles', 'assets/images/tilemaps/cyberpunk_tileset.png');
+    this.load.tilemapTiledJSON('map', 'assets/images/tilemaps/level_1.json');
   }
 
   create(): void {
     this.createBackground();
-    this.createPlatforms();
     this.player = new Player(this, 100, 150);
+    this.createTilemap();
+    this.createPlatforms();
     this.createStars();
     this.createScore();
     this.createBombs();
+
+    this.cameras.main.setBounds(0, 0, 1920, 600);
+    this.physics.world.setBounds(0, 0, 1920, window.innerHeight);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
   }
 
   override update(time: number, delta: number): void {
@@ -48,17 +59,44 @@ class MainScene extends Phaser.Scene implements IMainScene {
   }
 
   private createBackground(): void {
-    this.add.image(0, 0, 'sky').setOrigin(0, 0);
+    const image = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'sky');
+    const scaleX = this.cameras.main.width / image.width;
+    const scaleY = this.cameras.main.height / image.height;
+    const scale = Math.max(scaleX, scaleY);
+    image.setScale(scale).setScrollFactor(0);
+  }
+
+  private createTilemap(): void {
+    this.tilemap = this.make.tilemap({ key: 'map' });
+    this.tileset = this.tilemap.addTilesetImage('cyberpunk_tileset', 'tiles');
   }
 
   private createPlatforms(): void {
-    this.platforms = this.physics.add.staticGroup();
+    this.platforms = this.tilemap.createLayer('Tile Layer 1', this.tileset);
 
-    this.platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+    this.platforms.setCollisionBetween(1, this.platforms.tilesTotal, true, false);
+    this.physics.add.collider(this.player, this.platforms);
 
-    this.platforms.create(600, 400, 'ground');
-    this.platforms.create(50, 250, 'ground');
-    this.platforms.create(750, 220, 'ground');
+    // Loop through all tiles and remove collisions between adjastent tiles
+    this.platforms.forEachTile(tile => {
+      if (tile.index !== -1) {
+        if (this.tilemap.getTileAt(tile.x, tile.y + 1)) {
+          tile.collideDown = false;
+        }
+
+        if (this.tilemap.getTileAt(tile.x, tile.y - 1)) {
+          tile.collideUp = false;
+        }
+
+        if (this.tilemap.getTileAt(tile.x + 1, tile.y)) {
+          tile.collideRight = false;
+        }
+
+        if (this.tilemap.getTileAt(tile.x - 1, tile.y)) {
+          tile.collideLeft = false;
+        }
+      }
+    });
   }
 
   private createStars(): void {
@@ -93,10 +131,14 @@ class MainScene extends Phaser.Scene implements IMainScene {
 
   private createScore(): void {
     this.scoreText = this.add.text(16, 16, 'SCORE: 0', { fontSize: '32px', color: 'black', stroke: 'black', strokeThickness: 2 });
+    this.scoreText.setScrollFactor(0);
   }
 
   private createGameOverText(): void {
-    this.gameOverText = this.add.text(220, 270, 'GAME OVER', { fontSize: '64px', color: 'red', stroke: 'red', strokeThickness: 3 });
+    const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
+    const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
+
+    this.gameOverText = this.add.text(screenCenterX, screenCenterY, 'GAME OVER', { fontSize: '64px', color: 'red', stroke: 'red', strokeThickness: 2 }).setOrigin(0.5);
   }
 
   private createBombs(): void {
@@ -136,8 +178,8 @@ export class GameComponent implements OnInit {
       scale: {
         mode: Phaser.Scale.FIT,
         parent: 'gameContainer',
-        height: 600,
-        width: 800
+        height: 640,
+        width: 800,
       },
       physics: {
         default: 'arcade',
