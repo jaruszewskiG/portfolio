@@ -148,11 +148,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private onWieldingNothingEnter(): void {
     switch (this.stateMachine.currentStateName) {
+      case PlayerActionStates.IDLE:
+        this.anims.play(PlayerAnimations.IDLE);
+        break;
       case PlayerActionStates.RUN:
         this.anims.play(PlayerAnimations.RUN);
         break;
-      default:
-        this.anims.play(PlayerAnimations.IDLE);
     }
   }
 
@@ -164,11 +165,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private onWieldingRifleEnter(): void {
     switch (this.stateMachine.currentStateName) {
+      case PlayerActionStates.IDLE:
+        this.anims.play(PlayerAnimations.RIFLE_IDLE);
+        break;
       case PlayerActionStates.RUN:
         this.anims.play(PlayerAnimations.RIFLE_RUN);
         break;
-      default:
-        this.anims.play(PlayerAnimations.RIFLE_IDLE);
     }
   }
 
@@ -182,11 +184,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(0);
 
     switch (this.wieldingStateMachine?.currentStateName) {
+      case PlayerWieldingStates.NOTHING:
+        this.anims.play(PlayerAnimations.IDLE);
+        break;
       case PlayerWieldingStates.RIFLE:
         this.anims.play(PlayerAnimations.RIFLE_IDLE);
         break;
-      default:
-        this.anims.play(PlayerAnimations.IDLE);
     }
   }
 
@@ -206,11 +209,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private onRunEnter(): void {
     switch (this.wieldingStateMachine?.currentStateName) {
+      case PlayerWieldingStates.NOTHING:
+        this.anims.play(PlayerAnimations.RUN);
+        break;
       case PlayerWieldingStates.RIFLE:
         this.anims.play(PlayerAnimations.RIFLE_RUN);
         break;
-      default:
-        this.anims.play(PlayerAnimations.RUN);
     }
   }
 
@@ -256,7 +260,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    const jumpFramePrefix = `${capitalizeString(PlayerAnimations.JUMP)}_`;
+    let jumpFramePrefix = `${capitalizeString(PlayerAnimations.JUMP)}_`;
+    switch (this.wieldingStateMachine?.currentStateName) {
+      case PlayerWieldingStates.RIFLE:
+        jumpFramePrefix = `${capitalizeString(PlayerAnimations.RIFLE_JUMP)}_`;
+        break;
+    }
 
     if (this.body.velocity.y < 0) {
       this.setFrame(`${jumpFramePrefix}1`);
@@ -288,7 +297,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    const fallFramePrefix = `${capitalizeString(PlayerAnimations.JUMP)}_`;
+    let fallFramePrefix = `${capitalizeString(PlayerAnimations.JUMP)}_`;
+    switch (this.wieldingStateMachine?.currentStateName) {
+      case PlayerWieldingStates.RIFLE:
+        fallFramePrefix = `${capitalizeString(PlayerAnimations.RIFLE_JUMP)}_`;
+        break;
+    }
 
     if (this.body.velocity.y < 400) {
       this.setFrame(`${fallFramePrefix}3`);
