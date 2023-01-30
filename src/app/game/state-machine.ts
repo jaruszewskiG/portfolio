@@ -9,6 +9,15 @@ export default class StateMachine {
 	private context?: object;
   private isChangingState: boolean = false;
   private changeStateQueue: string[] = [];
+  private lastStateChangeTimestamp: number;
+
+  public get currentStateName(): string | undefined  {
+    return this.currentState?.name;
+  }
+  
+  public get timeSinceLastStateChange(): number {
+    return performance.now() - this.lastStateChangeTimestamp;
+  }
 
   constructor(context?: object, id?: string){
 		this.id = id ?? this.id;
@@ -55,6 +64,7 @@ export default class StateMachine {
       this.currentState.onEnter();
     }
   
+    this.lastStateChangeTimestamp = performance.now();
     this.isChangingState = false;
   }
 

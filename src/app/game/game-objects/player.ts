@@ -1,6 +1,6 @@
 import { capitalizeString } from "../helpers/string.helpers";
 import { IMainScene } from "../models/main-scene.model";
-import { PlayerActions } from "../models/player.model";
+import { PlayerActionStates, PlayerAnimations, PlayerWieldingStates } from "../models/player.model";
 import StateMachine from "../state-machine";
 
 const KEY: string = 'Biker';
@@ -8,7 +8,9 @@ const DEFAULT_FRAME_RATE = 10;
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wieldingToggleKey: Phaser.Input.Keyboard.Key;
   private stateMachine: StateMachine;
+  private wieldingStateMachine: StateMachine;
 
   constructor(
     public override scene: IMainScene,
@@ -23,6 +25,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setupControls();
     this.setAcceleration(0, 800);
     this.setupStateMachine();
+    this.setupWieldingStateMachine();
     this.setupAnimationListeners();
 
     this.setOrigin(0.5, 1);
@@ -30,10 +33,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   
   public override update(time: number, delta: number) {
     this.stateMachine.update(delta);
+    this.wieldingStateMachine.update(delta);
   }
   
   public die(): void {
-    this.anims.play(PlayerActions.DEATH);
+    this.anims.play(PlayerAnimations.DEATH);
     this.setVelocityY(200);
   }
   
@@ -44,29 +48,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   
   private setupAnimations(): void {
     this.anims.create({
-      key: PlayerActions.RUN,
-      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerActions.RUN)}_`, end: 6 }),
+      key: PlayerAnimations.RUN,
+      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerAnimations.RUN)}_`, end: 6 }),
       frameRate: DEFAULT_FRAME_RATE,
       repeat: -1,
     });
   
     this.anims.create({
-      key: PlayerActions.IDLE,
-      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerActions.IDLE)}_`, end: 4 }),
+      key: PlayerAnimations.IDLE,
+      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerAnimations.IDLE)}_`, end: 4 }),
       frameRate: DEFAULT_FRAME_RATE,
       repeat: -1,
     });
 
     this.anims.create({
-      key: PlayerActions.DEATH,
-      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerActions.DEATH)}_`, end: 6 }),
+      key: PlayerAnimations.DEATH,
+      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerAnimations.DEATH)}_`, end: 6 }),
       frameRate: DEFAULT_FRAME_RATE,
     });
 
     this.anims.create({
-      key: PlayerActions.KICK,
-      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerActions.KICK)}_`, end: 6 }),
+      key: PlayerAnimations.KICK,
+      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerAnimations.KICK)}_`, end: 6 }),
       frameRate: DEFAULT_FRAME_RATE,
+    });
+
+    // Animations with player holding a rifle
+    this.anims.create({
+      key: PlayerAnimations.RIFLE_RUN,
+      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerAnimations.RIFLE_RUN)}_`, end: 6 }),
+      frameRate: DEFAULT_FRAME_RATE,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: PlayerAnimations.RIFLE_IDLE,
+      frames: this.anims.generateFrameNames(KEY, { prefix: `${capitalizeString(PlayerAnimations.RIFLE_IDLE)}_`, end: 4 }),
+      frameRate: DEFAULT_FRAME_RATE,
+      repeat: -1,
     });
   }
   
@@ -77,59 +96,122 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   
   private setupControls(): void {
     this.cursors = this.scene.input.keyboard.createCursorKeys();
+    this.wieldingToggleKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
   }
 
   private setupStateMachine(): void {
     this.stateMachine = new StateMachine(this, 'player');
     this.stateMachine
       .addState({
-        name: PlayerActions.IDLE,
+        name: PlayerActionStates.IDLE,
         onEnter: this.onIdleEnter,
         onUpdate: this.onIdleUpdate,
       })
       .addState({
-        name: PlayerActions.RUN,
+        name: PlayerActionStates.RUN,
         onEnter: this.onRunEnter,
         onUpdate: this.onRunUpdate
       })
       .addState({
-        name: PlayerActions.KICK, 
+        name: PlayerActionStates.KICK, 
         onEnter: this.onKickEnter,
       })
       .addState({
-        name: PlayerActions.JUMP,
+        name: PlayerActionStates.JUMP,
         onEnter: this.onJumpEnter,
         onUpdate: this.onJumpUpdate
       })
       .addState({
-        name: PlayerActions.FALL,
+        name: PlayerActionStates.FALL,
         onUpdate: this.onFallUpdate
       })
 
-    this.stateMachine.setState(PlayerActions.IDLE);
+    this.stateMachine.setState(PlayerActionStates.IDLE);
+  }
+
+  private setupWieldingStateMachine(): void {
+    this.wieldingStateMachine = new StateMachine(this, 'player-wielding');
+    this.wieldingStateMachine
+      .addState({
+        name: PlayerWieldingStates.NOTHING,
+        onEnter: this.onWieldingNothingEnter,
+        onUpdate: this.onWieldingNothingUpdate
+      })
+      .addState({
+        name: PlayerWieldingStates.RIFLE,
+        onEnter: this.onWieldingRifleEnter,
+        onUpdate: this.onWieldingRifleUpdate,
+      });
+
+      this.wieldingStateMachine.setState(PlayerWieldingStates.NOTHING);
+  }
+
+  private onWieldingNothingEnter(): void {
+    switch (this.stateMachine.currentStateName) {
+      case PlayerActionStates.RUN:
+        this.anims.play(PlayerAnimations.RUN);
+        break;
+      default:
+        this.anims.play(PlayerAnimations.IDLE);
+    }
+  }
+
+  private onWieldingNothingUpdate(): void {
+    if (this.wieldingToggleKey.isDown && this.wieldingStateMachine.timeSinceLastStateChange > 400) {
+      this.wieldingStateMachine.setState(PlayerWieldingStates.RIFLE);
+    }
+  }
+
+  private onWieldingRifleEnter(): void {
+    switch (this.stateMachine.currentStateName) {
+      case PlayerActionStates.RUN:
+        this.anims.play(PlayerAnimations.RIFLE_RUN);
+        break;
+      default:
+        this.anims.play(PlayerAnimations.RIFLE_IDLE);
+    }
+  }
+
+  private onWieldingRifleUpdate(): void {
+    if (this.wieldingToggleKey.isDown && this.wieldingStateMachine.timeSinceLastStateChange > 400) {
+      this.wieldingStateMachine.setState(PlayerWieldingStates.NOTHING);
+    }
   }
 
   private onIdleEnter(): void {
     this.setVelocityX(0);
-    this.anims.play(PlayerActions.IDLE);
+
+    switch (this.wieldingStateMachine?.currentStateName) {
+      case PlayerWieldingStates.RIFLE:
+        this.anims.play(PlayerAnimations.RIFLE_IDLE);
+        break;
+      default:
+        this.anims.play(PlayerAnimations.IDLE);
+    }
   }
 
   private onIdleUpdate(): void {
     if (this.cursors.left.isDown || this.cursors.right.isDown) {
-			this.stateMachine.setState(PlayerActions.RUN);
+			this.stateMachine.setState(PlayerActionStates.RUN);
 		} else if (this.cursors.shift.isDown) {
-			this.stateMachine.setState(PlayerActions.KICK);
+			this.stateMachine.setState(PlayerActionStates.KICK);
 		}
 
     if (this.cursors.up.isDown && (this.body as Phaser.Physics.Arcade.Body).onFloor()) {
-      this.stateMachine.setState(PlayerActions.JUMP);
+      this.stateMachine.setState(PlayerActionStates.JUMP);
     } else if (this.body.velocity.y > 100 && !(this.body as Phaser.Physics.Arcade.Body).onFloor()) {
-      this.stateMachine.setState(PlayerActions.FALL);
+      this.stateMachine.setState(PlayerActionStates.FALL);
     }
   }
 
   private onRunEnter(): void {
-    this.anims.play(PlayerActions.RUN);
+    switch (this.wieldingStateMachine?.currentStateName) {
+      case PlayerWieldingStates.RIFLE:
+        this.anims.play(PlayerAnimations.RIFLE_RUN);
+        break;
+      default:
+        this.anims.play(PlayerAnimations.RUN);
+    }
   }
 
   private onRunUpdate(): void {
@@ -140,25 +222,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityX(300);
       this.flipX = false;
     } else if (this.cursors.shift.isDown) {
-      this.stateMachine.setState(PlayerActions.KICK);
+      this.stateMachine.setState(PlayerActionStates.KICK);
     } else {
-      this.stateMachine.setState(PlayerActions.IDLE);
+      this.stateMachine.setState(PlayerActionStates.IDLE);
     }
 
     if (this.cursors.up.isDown && (this.body as Phaser.Physics.Arcade.Body).onFloor()) {
-      this.stateMachine.setState(PlayerActions.JUMP);
+      this.stateMachine.setState(PlayerActionStates.JUMP);
     } else if (this.body.velocity.y > 50 && !(this.body as Phaser.Physics.Arcade.Body).onFloor()) {
-      this.stateMachine.setState(PlayerActions.FALL);
+      this.stateMachine.setState(PlayerActionStates.FALL);
     }
   }
 
   private onKickEnter(): void {
     this.setVelocityX(0);
-    this.anims.play(PlayerActions.KICK);
+    this.anims.play(PlayerAnimations.KICK);
   }
 
   private setupAnimationListeners(): void {
-    this.on(`${Phaser.Animations.Events.ANIMATION_COMPLETE}-${PlayerActions.KICK}`, () => this.stateMachine.setState(PlayerActions.IDLE));
+    this.on(`${Phaser.Animations.Events.ANIMATION_COMPLETE}-${PlayerAnimations.KICK}`, () => this.stateMachine.setState(PlayerActionStates.IDLE));
   }
 
   private onJumpEnter(): void {
@@ -168,13 +250,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private onJumpUpdate(): void {
     if ((this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       if (this.cursors.left.isDown || this.cursors.right.isDown) {
-        this.stateMachine.setState(PlayerActions.RUN);
+        this.stateMachine.setState(PlayerActionStates.RUN);
       } else {
-        this.stateMachine.setState(PlayerActions.IDLE);
+        this.stateMachine.setState(PlayerActionStates.IDLE);
       }
     }
 
-    const jumpFramePrefix = `${capitalizeString(PlayerActions.JUMP)}_`;
+    const jumpFramePrefix = `${capitalizeString(PlayerAnimations.JUMP)}_`;
 
     if (this.body.velocity.y < 0) {
       this.setFrame(`${jumpFramePrefix}1`);
@@ -200,13 +282,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private onFallUpdate(): void {
     if ((this.body as Phaser.Physics.Arcade.Body).onFloor()) {
       if (this.cursors.left.isDown || this.cursors.right.isDown) {
-        this.stateMachine.setState(PlayerActions.RUN);
+        this.stateMachine.setState(PlayerActionStates.RUN);
       } else {
-        this.stateMachine.setState(PlayerActions.IDLE);
+        this.stateMachine.setState(PlayerActionStates.IDLE);
       }
     }
 
-    const fallFramePrefix = `${capitalizeString(PlayerActions.JUMP)}_`;
+    const fallFramePrefix = `${capitalizeString(PlayerAnimations.JUMP)}_`;
 
     if (this.body.velocity.y < 400) {
       this.setFrame(`${fallFramePrefix}3`);
