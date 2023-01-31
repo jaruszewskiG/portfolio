@@ -11,6 +11,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private wieldingToggleKey: Phaser.Input.Keyboard.Key;
   private stateMachine: StateMachine;
   private wieldingStateMachine: StateMachine;
+  private rifleArms: Phaser.GameObjects.Sprite;
 
   constructor(
     public override scene: IMainScene,
@@ -23,6 +24,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setupColliders();
     this.setupAnimations();
     this.setupControls();
+    this.setupPointer();
     this.setAcceleration(0, 800);
     this.setupStateMachine();
     this.setupWieldingStateMachine();
@@ -34,6 +36,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public override update(time: number, delta: number) {
     this.stateMachine.update(delta);
     this.wieldingStateMachine.update(delta);
+    this.rifleArms.x = this.x - this.width / 2 + 2;
+    this.rifleArms.y = this.y - this.height / 2 - 1;
   }
   
   public die(): void {
@@ -44,6 +48,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private setupPlayer(): void {
     this.scene.physics.world.enable(this);
     this.scene.add.existing(this);
+    this.rifleArms = this.scene.add.sprite(this.x, this.y - this.height / 2, 'Biker_arm').setOrigin(0.1, 0.5);
   }
   
   private setupAnimations(): void {
@@ -99,6 +104,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.wieldingToggleKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
   }
 
+  private setupPointer(): void {
+    this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      const angle = Phaser.Math.Angle.Between(this.x, this.y, pointer.x, pointer.y);
+      this.rifleArms.rotation = angle;
+
+      console.log(angle);
+    });
+  }
+
   private setupStateMachine(): void {
     this.stateMachine = new StateMachine(this, 'player');
     this.stateMachine
@@ -130,7 +144,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private setupWieldingStateMachine(): void {
-    this.wieldingStateMachine = new StateMachine(this, 'player-wielding');
+    this.wieldingStateMachine = new StateMachine(this, 'player-wielding', 400);
     this.wieldingStateMachine
       .addState({
         name: PlayerWieldingStates.NOTHING,
@@ -158,7 +172,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private onWieldingNothingUpdate(): void {
-    if (this.wieldingToggleKey.isDown && this.wieldingStateMachine.timeSinceLastStateChange > 400) {
+    if (this.wieldingToggleKey.isDown) {
       this.wieldingStateMachine.setState(PlayerWieldingStates.RIFLE);
     }
   }
@@ -175,7 +189,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private onWieldingRifleUpdate(): void {
-    if (this.wieldingToggleKey.isDown && this.wieldingStateMachine.timeSinceLastStateChange > 400) {
+    if (this.wieldingToggleKey.isDown) {
       this.wieldingStateMachine.setState(PlayerWieldingStates.NOTHING);
     }
   }

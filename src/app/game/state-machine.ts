@@ -7,6 +7,7 @@ export default class StateMachine {
   private currentState?: IState;
   private id = (++idCount).toString();
 	private context?: object;
+  private throttleTime: number = 0;
   private isChangingState: boolean = false;
   private changeStateQueue: string[] = [];
   private lastStateChangeTimestamp: number;
@@ -15,13 +16,14 @@ export default class StateMachine {
     return this.currentState?.name;
   }
   
-  public get timeSinceLastStateChange(): number {
+  private get timeSinceLastStateChange(): number {
     return performance.now() - this.lastStateChangeTimestamp;
   }
 
-  constructor(context?: object, id?: string){
+  constructor(context?: object, id?: string, throttleTime: number = 0){
 		this.id = id ?? this.id;
 		this.context = context;
+    this.throttleTime = throttleTime;
 	}
 
   addState(config: IState): StateMachine {
@@ -41,7 +43,7 @@ export default class StateMachine {
       return;
     }
   
-    if (this.isCurrentState(name)) {
+    if (this.isCurrentState(name) || this.timeSinceLastStateChange < this.throttleTime) {
       return;
     }
   
