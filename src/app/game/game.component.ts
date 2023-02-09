@@ -30,7 +30,7 @@ class MainScene extends Phaser.Scene implements IMainScene {
     this.load.image('star', 'assets/images/star.png');
     this.load.image('bomb', 'assets/images/bomb.png');
     this.load.atlas('Biker', 'assets/images/Biker/Biker.png', 'assets/images/Biker/Biker.json');
-    this.load.image('Biker_arm', 'assets/images/Biker/Biker_arm.png')
+    this.load.atlas('Biker_arms', 'assets/images/Biker/Biker_arms.png', 'assets/images/Biker/Biker_arms.json');
 
     this.load.image('tiles', 'assets/images/tilemaps/cyberpunk_tileset.png');
     this.load.tilemapTiledJSON('map', 'assets/images/tilemaps/level_1.json');

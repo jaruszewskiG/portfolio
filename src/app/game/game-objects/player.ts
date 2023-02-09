@@ -2,6 +2,7 @@ import { capitalizeString } from "../helpers/string.helpers";
 import { IMainScene } from "../models/main-scene.model";
 import { PlayerActionStates, PlayerAnimations, PlayerWieldingStates } from "../models/player.model";
 import StateMachine from "../state-machine";
+import { PlayerArms } from "./player-arms";
 
 const KEY: string = 'Biker';
 const DEFAULT_FRAME_RATE = 10;
@@ -24,7 +25,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setupColliders();
     this.setupAnimations();
     this.setupControls();
-    this.setupPointer();
     this.setAcceleration(0, 800);
     this.setupStateMachine();
     this.setupWieldingStateMachine();
@@ -36,8 +36,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public override update(time: number, delta: number) {
     this.stateMachine.update(delta);
     this.wieldingStateMachine.update(delta);
-    this.rifleArms.x = this.x - this.width / 2 + 2;
-    this.rifleArms.y = this.y - this.height / 2 - 1;
+    this.setSize(this.width, this.height);
+    this.rifleArms.update(time, delta);
   }
   
   public die(): void {
@@ -48,7 +48,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private setupPlayer(): void {
     this.scene.physics.world.enable(this);
     this.scene.add.existing(this);
-    this.rifleArms = this.scene.add.sprite(this.x, this.y - this.height / 2, 'Biker_arm').setOrigin(0.1, 0.5);
+    this.rifleArms = new PlayerArms(this.scene, this.x, this.y - this.height / 2, this);
+    //this.rifleArms = this.scene.add.sprite(this.x, this.y - this.height / 2, 'Biker_arm').setOrigin(0.1, 0.15);
   }
   
   private setupAnimations(): void {
@@ -102,15 +103,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private setupControls(): void {
     this.cursors = this.scene.input.keyboard.createCursorKeys();
     this.wieldingToggleKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-  }
-
-  private setupPointer(): void {
-    this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      const angle = Phaser.Math.Angle.Between(this.x, this.y, pointer.x, pointer.y);
-      this.rifleArms.rotation = angle;
-
-      console.log(angle);
-    });
   }
 
   private setupStateMachine(): void {
@@ -259,6 +251,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private setupAnimationListeners(): void {
     this.on(`${Phaser.Animations.Events.ANIMATION_COMPLETE}-${PlayerAnimations.KICK}`, () => this.stateMachine.setState(PlayerActionStates.IDLE));
+
+    //this.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.rifleArms// send info about current frame)
   }
 
   private onJumpEnter(): void {
@@ -282,13 +276,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.body.velocity.y < 0) {
-      this.setFrame(`${jumpFramePrefix}1`);
+      this.setFrame(`${jumpFramePrefix}1`, true, false);
     } else if (this.body.velocity.y < 150) {
-      this.setFrame(`${jumpFramePrefix}2`);
+      this.setFrame(`${jumpFramePrefix}2`, true, false);
     } else if (this.body.velocity.y < 400) {
-      this.setFrame(`${jumpFramePrefix}3`);
+      this.setFrame(`${jumpFramePrefix}3`, true, false);
     } else {
-      this.setFrame(`${jumpFramePrefix}4`);
+      this.setFrame(`${jumpFramePrefix}4`, true, false);
     }
 
     if (this.cursors.left.isDown) {
@@ -319,9 +313,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.body.velocity.y < 400) {
-      this.setFrame(`${fallFramePrefix}3`);
+      this.setFrame(`${fallFramePrefix}3`, false, false);
     } else {
-      this.setFrame(`${fallFramePrefix}4`);
+      this.setFrame(`${fallFramePrefix}4`, false, false);
     }
 
     if (this.cursors.left.isDown) {
