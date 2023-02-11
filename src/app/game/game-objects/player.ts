@@ -12,7 +12,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private wieldingToggleKey: Phaser.Input.Keyboard.Key;
   private stateMachine: StateMachine;
   private wieldingStateMachine: StateMachine;
-  private rifleArms: Phaser.GameObjects.Sprite;
+  private arms: PlayerArms;
 
   constructor(
     public override scene: IMainScene,
@@ -31,13 +31,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setupAnimationListeners();
 
     this.setOrigin(0.5, 1);
+
+    this.setupArms();
   }
   
   public override update(time: number, delta: number) {
     this.stateMachine.update(delta);
     this.wieldingStateMachine.update(delta);
     this.setSize(this.width, this.height);
-    this.rifleArms.update(time, delta);
+    this.arms.update();
   }
   
   public die(): void {
@@ -48,8 +50,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private setupPlayer(): void {
     this.scene.physics.world.enable(this);
     this.scene.add.existing(this);
-    this.rifleArms = new PlayerArms(this.scene, this.x, this.y - this.height / 2, this);
-    //this.rifleArms = this.scene.add.sprite(this.x, this.y - this.height / 2, 'Biker_arm').setOrigin(0.1, 0.15);
+  }
+
+  private setupArms(): void {
+    this.arms = new PlayerArms(this.scene, this.x, this.y - this.height / 2, this, this.wieldingStateMachine.currentStateName as PlayerWieldingStates);
   }
   
   private setupAnimations(): void {
@@ -166,6 +170,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private onWieldingNothingUpdate(): void {
     if (this.wieldingToggleKey.isDown) {
       this.wieldingStateMachine.setState(PlayerWieldingStates.RIFLE);
+      this.arms.playerWieldingStateChange(this.wieldingStateMachine.currentStateName as PlayerWieldingStates);
     }
   }
 
@@ -183,6 +188,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private onWieldingRifleUpdate(): void {
     if (this.wieldingToggleKey.isDown) {
       this.wieldingStateMachine.setState(PlayerWieldingStates.NOTHING);
+      this.arms.playerWieldingStateChange(this.wieldingStateMachine.currentStateName as PlayerWieldingStates);
     }
   }
 
@@ -252,7 +258,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private setupAnimationListeners(): void {
     this.on(`${Phaser.Animations.Events.ANIMATION_COMPLETE}-${PlayerAnimations.KICK}`, () => this.stateMachine.setState(PlayerActionStates.IDLE));
 
-    //this.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.rifleArms// send info about current frame)
+    //this.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.arms// send info about current frame)
   }
 
   private onJumpEnter(): void {
