@@ -257,8 +257,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private setupAnimationListeners(): void {
     this.on(`${Phaser.Animations.Events.ANIMATION_COMPLETE}-${PlayerAnimations.KICK}`, () => this.stateMachine.setState(PlayerActionStates.IDLE));
-
-    //this.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.arms// send info about current frame)
   }
 
   private onJumpEnter(): void {

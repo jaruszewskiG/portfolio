@@ -8,8 +8,8 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
   private player: Phaser.Physics.Arcade.Sprite;
 
   private pointerAngle: number = 0;
-  private baseOffsetX: number = 4;
-  private baseOffsetY: number = -5;
+  private playerAnimationOffsetX: number = 0;
+  private playerAnimationOffsetY: number = 0;
   private frameOffsetX: number = 0;
   private frameOffsetY: number = 0;
   private playerFrameOffsetX: number = 0;
@@ -36,6 +36,50 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
       this.adjustPositionBasedOnPointerAngle();
     }
 
+    this.updatePlayerAnimationOffsets();
+    this.updatePlayerFrameOffsets();
+
+    if (this.flipX) {
+      this.playerFrameOffsetX = -this.playerFrameOffsetX;
+    }
+
+    this.x = this.player.x - this.player.width / 2 + this.playerAnimationOffsetX + this.frameOffsetX + this.playerFrameOffsetX;
+    this.y = this.player.y - this.player.height / 2 + this.playerAnimationOffsetY + this.frameOffsetY + this.playerframeOffsetY;
+  }
+
+  public playerWieldingStateChange(wieldingState: PlayerWieldingStates): void {
+    console.log(wieldingState);
+    if (wieldingState === PlayerWieldingStates.NOTHING) {
+      this.setVisible(false);
+    } else {
+      this.setVisible(true);
+    }
+  }
+
+  private updatePlayerAnimationOffsets(): void {
+    switch(this.player.anims.currentAnim.key) {
+      case PlayerAnimations.RIFLE_IDLE:
+        this.playerAnimationOffsetY = -5;
+
+        if (this.flipX) {
+          this.playerAnimationOffsetX = 16;
+        } else {
+          this.playerAnimationOffsetX = 4;
+        }
+        break;
+      case PlayerAnimations.RIFLE_RUN:
+        this.playerAnimationOffsetY = -4;
+
+        if (this.flipX) {
+          this.playerAnimationOffsetX = 17;
+        } else {
+          this.playerAnimationOffsetX = 15;
+        }
+        break;
+    }
+  }
+
+  private updatePlayerFrameOffsets(): void {
     switch(this.player.anims.currentFrame.textureFrame) {
       case `${capitalizeString(PlayerAnimations.RIFLE_IDLE)}_1`: 
         this.playerFrameOffsetX = 0;
@@ -49,22 +93,6 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
       case `${capitalizeString(PlayerAnimations.RIFLE_IDLE)}_4`: 
         this.playerFrameOffsetX = 0;
         break;
-    }
-
-    if (this.flipX) {
-      this.playerFrameOffsetX = -this.playerFrameOffsetX;
-    }
-
-    this.x = this.player.x - this.player.width / 2 + this.baseOffsetX + this.frameOffsetX + this.playerFrameOffsetX + (this.flipX ? 12 : 0);
-    this.y = this.player.y - this.player.height / 2 + this.baseOffsetY + this.frameOffsetY + this.playerframeOffsetY;
-  }
-
-  public playerWieldingStateChange(wieldingState: PlayerWieldingStates): void {
-    console.log(wieldingState);
-    if (wieldingState === PlayerWieldingStates.NOTHING) {
-      this.setVisible(false);
-    } else {
-      this.setVisible(true);
     }
   }
 
