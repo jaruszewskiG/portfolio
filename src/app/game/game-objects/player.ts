@@ -53,7 +53,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private setupArms(): void {
-    this.arms = new PlayerArms(this.scene, this.x, this.y - this.height / 2, this, this.wieldingStateMachine.currentStateName as PlayerWieldingStates);
+    this.arms = new PlayerArms(this.scene, this.x, this.y - this.height / 2, this, this.wieldingStateMachine.currentStateName as PlayerWieldingStates, this.stateMachine.stateChanged);
   }
   
   private setupAnimations(): void {

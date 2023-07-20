@@ -1,8 +1,11 @@
+import { EventEmitter } from "@angular/core";
 import { IState } from "./models/state-machine.model";
 
 let idCount: number = 0;
 
 export default class StateMachine {
+  public stateChanged: EventEmitter<string> = new EventEmitter();
+
   private states = new Map<string, IState>();
   private currentState?: IState;
   private id = (++idCount).toString();
@@ -55,6 +58,7 @@ export default class StateMachine {
     this.isChangingState = true;
   
     console.log(`[StateMachine (${this.id})] change from ${this.currentState?.name ?? 'none'} to ${name}`);
+    this.stateChanged.emit(name);
   
     if (this.currentState && this.currentState.onExit) {
       this.currentState.onExit();
