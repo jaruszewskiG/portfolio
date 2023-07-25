@@ -1,17 +1,20 @@
 import { EventEmitter } from "@angular/core";
+
 import { capitalizeString } from "../helpers/string.helpers";
 import { IMainScene } from "../models/main-scene.model";
 import { PlayerAnimations, PlayerWieldingStates, PlayerActionStates } from "../models/player.model";
 import { Player } from './player';
+import { PlayerRifle } from './player-rifle';
 
 const KEY: string = 'Biker_arms';
 
 export class PlayerArms extends Phaser.GameObjects.Sprite {
 
   private player: Player;
+  private rifle: PlayerRifle;
   private playerActionState: PlayerActionStates;
 
-  private pointerAngle: number = 0;
+  public pointerAngle: number = 0;
   private playerActionStateOffsetX: number = 0;
   private playerActionStateOffsetY: number = 0;
   private frameOffsetX: number = 0;
@@ -37,6 +40,8 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
       this.playerActionState = newState;
       this.updatePlayerActionStateOffsets();
     });
+    
+    this.setupRifle();
   }
   
   public override update() {
@@ -57,6 +62,8 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
 
     this.x = this.x + this.playerActionStateOffsetX + this.frameOffsetX + this.playerFrameOffsetX;
     this.y = this.y + this.playerActionStateOffsetY + this.frameOffsetY + this.playerFrameOffsetY;
+
+    this.rifle.update();
   }
 
   public playerWieldingStateChange(wieldingState: PlayerWieldingStates): void {
@@ -65,6 +72,10 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
     } else {
       this.setVisible(true);
     }
+  }
+
+  private setupRifle(): void {
+    this.rifle = new PlayerRifle(this.scene, this.x, this.y - this.height / 2, this);
   }
 
   private updatePlayerActionStateOffsets(): void {
@@ -164,6 +175,7 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
     this.scene.add.existing(this);
     this.setFrame('Arms_1', true, false);
     this.setOrigin(0.5, 0);
+    this.setDepth(2);
     this.scene.input.on('pointerdown', () => this.scene.input.mouse.requestPointerLock(), this);
     this.playerWieldingStateChange(initialWieldingState);
   }
@@ -182,32 +194,32 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
   private adjustPositionBasedOnPointerAngle(): void {
     if (0.75 < this.pointerAngle && this.pointerAngle <= 1.4) {
       this.setFrame('Arms_1', true, false);
-      this.rotation = this.pointerAngle - 1.2;
-      this.setOrigin(0.5, 0);
+      this.rotation = this.pointerAngle - 1.4;
+      this.setOrigin(0.5, 0.15);
       this.frameOffsetX = -8;
-      this.frameOffsetY = 29;
+      this.frameOffsetY = 30;
     } else if (0.3 < this.pointerAngle && this.pointerAngle <= 0.75) {
       this.setFrame('Arms_2', true, false);
       this.rotation = this.pointerAngle - 0.6;
-      this.setOrigin(0.1, 0);
+      this.setOrigin(0.1, 0.15);
       this.frameOffsetX = -4;
       this.frameOffsetY = 31;
     } else if (-0.4 < this.pointerAngle && this.pointerAngle <= 0.3) {
       this.setFrame('Arms_3', true, false);
       this.rotation = this.pointerAngle;
-      this.setOrigin(0.1, 0);
-      this.frameOffsetX = -2;
-      this.frameOffsetY = 25;
+      this.setOrigin(0.1, 0.1);
+      this.frameOffsetX = -1;
+      this.frameOffsetY = 24;
     } else if (-0.8 < this.pointerAngle && this.pointerAngle <= -0.4) {
       this.setFrame('Arms_4', true, false);
-      this.rotation = this.pointerAngle + 0.6;
-      this.setOrigin(0.1, 1);
+      this.rotation = this.pointerAngle + 0.82;
+      this.setOrigin(0.1, 0.85);
       this.frameOffsetX = -1;
       this.frameOffsetY = 21;
     } else {
       this.setFrame('Arms_5', true, false);
-      this.rotation = this.pointerAngle +  0.9;
-      this.setOrigin(0.1, 1);
+      this.rotation = this.pointerAngle +  1.3;
+      this.setOrigin(0.1, 0.8);
       this.frameOffsetX = -2;
       this.frameOffsetY = 20;
     }
