@@ -79,7 +79,7 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
         return;
       }
 
-      this.bullets.add(new PlayerRifleBullet(this.scene, this.x, this.y, 700, 0));
+      this.bullets.add(new PlayerRifleBullet(this.scene, this.x, this.y, this.arms.pointerAngle, this.flipX));
       this.lastBulletFireTime = performance.now();
     }
   }
