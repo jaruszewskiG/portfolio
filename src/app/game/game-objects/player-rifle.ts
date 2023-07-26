@@ -1,5 +1,6 @@
 import { IMainScene } from "../models/main-scene.model";
 import { PlayerArms } from "./player-arms";
+import { PlayerRifleBullet } from "./player-rifle-bullet";
 
 const KEY: string = 'Biker_rifle';
 
@@ -8,6 +9,14 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
 
   private armsFrameOffsetX = 0;
   private armsFrameOffsetY = 0;
+  private fireKey: Phaser.Input.Keyboard.Key;
+  private bullets: Phaser.Physics.Arcade.Group;
+  private bulletFireSpeed = 100;
+  private lastBulletFireTime = 0;
+
+  private get timeSinceLastFire(): number {
+    return performance.now() - this.lastBulletFireTime;
+  }
 
   constructor(
     public override scene: IMainScene,
@@ -20,6 +29,15 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
     this.arms = arms;
 
     this.initialSetup()
+  }
+
+  private initialSetup(): void {
+    this.scene.add.existing(this);
+    this.setFrame('Rifle_4_1', true, false);
+    this.setOrigin(0.1, 0.5);
+    this.setDepth(this.arms.depth - 1);
+    this.setupControls();
+    this.setupBullets();
   }
   
   public override update() {
@@ -55,6 +73,20 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
 
     this.x = this.arms.x + this.armsFrameOffsetX;
     this.y = this.arms.y + this.armsFrameOffsetY;
+
+    if (this.fireKey.isDown) {
+      if (this.timeSinceLastFire < this.bulletFireSpeed) {
+        return;
+      }
+
+      this.bullets.add(new PlayerRifleBullet(this.scene, this.x, this.y, 700, 0));
+      this.lastBulletFireTime = performance.now();
+    }
+  }
+
+  private setupBullets() {
+    this.bullets = this.scene.physics.add.group({ classType: PlayerRifleBullet, runChildUpdate: true });
+    (this.bullets.defaults as {}) = {}
   }
 
   private updateArmsFrameOffset() {
@@ -82,10 +114,7 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
     }
   }
 
-  private initialSetup(): void {
-    this.scene.add.existing(this);
-    this.setFrame('Rifle_4_1', true, false);
-    this.setOrigin(0.1, 0.5);
-    this.setDepth(this.arms.depth - 1);
+  private setupControls(): void {
+    this.fireKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
   }
 }
