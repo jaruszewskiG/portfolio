@@ -39,5 +39,11 @@ export class PlayerRifleBullet extends Phaser.Physics.Arcade.Sprite {
     const velocityY = this.velocityBase * Math.sin(this.pointerAngle);
     this.setVelocity(velocityX, velocityY);
     this.setGravityY(-this.scene.physics.config.gravity!.y!);
+
+    this.scene.physics.add.collider(this, this.scene.platforms, this.bulletHit, undefined, this);
+  }
+
+  private bulletHit() {
+    this.disableBody(true, true);
   }
 }

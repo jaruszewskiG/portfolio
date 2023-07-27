@@ -146,8 +146,8 @@ class MainScene extends Phaser.Scene implements IMainScene {
 
   private createBombs(): void {
     const hitBomb = (): void => {
-      this.physics.pause();
       this.player.die();
+      this.physics.pause();
       this.isGameOver = true;
     }
 

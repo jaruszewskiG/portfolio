@@ -43,6 +43,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   
   public die(): void {
+    this.wieldingStateMachine.setState(PlayerWieldingStates.NOTHING);
+    this.arms.playerWieldingStateChange(this.wieldingStateMachine.currentStateName as PlayerWieldingStates);
+    this.arms.update();
     this.anims.play(PlayerAnimations.DEATH);
     this.setVelocityY(200);
   }
