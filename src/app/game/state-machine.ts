@@ -1,18 +1,32 @@
+import { EventEmitter } from "@angular/core";
 import { IState } from "./models/state-machine.model";
 
 let idCount: number = 0;
 
 export default class StateMachine {
+  public stateChanged: EventEmitter<string> = new EventEmitter();
+
   private states = new Map<string, IState>();
   private currentState?: IState;
   private id = (++idCount).toString();
 	private context?: object;
+  private throttleTime: number = 0;
   private isChangingState: boolean = false;
   private changeStateQueue: string[] = [];
+  private lastStateChangeTimestamp: number;
 
-  constructor(context?: object, id?: string){
+  public get currentStateName(): string | undefined  {
+    return this.currentState?.name;
+  }
+  
+  private get timeSinceLastStateChange(): number {
+    return performance.now() - this.lastStateChangeTimestamp;
+  }
+
+  constructor(context?: object, id?: string, throttleTime: number = 0){
 		this.id = id ?? this.id;
 		this.context = context;
+    this.throttleTime = throttleTime;
 	}
 
   addState(config: IState): StateMachine {
@@ -32,7 +46,7 @@ export default class StateMachine {
       return;
     }
   
-    if (this.isCurrentState(name)) {
+    if (this.isCurrentState(name) || this.timeSinceLastStateChange < this.throttleTime) {
       return;
     }
   
@@ -44,6 +58,7 @@ export default class StateMachine {
     this.isChangingState = true;
   
     console.log(`[StateMachine (${this.id})] change from ${this.currentState?.name ?? 'none'} to ${name}`);
+    this.stateChanged.emit(name);
   
     if (this.currentState && this.currentState.onExit) {
       this.currentState.onExit();
@@ -55,6 +70,7 @@ export default class StateMachine {
       this.currentState.onEnter();
     }
   
+    this.lastStateChangeTimestamp = performance.now();
     this.isChangingState = false;
   }
 
