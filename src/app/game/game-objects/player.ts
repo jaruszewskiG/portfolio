@@ -104,7 +104,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   
   private setupColliders() {
     this.setCollideWorldBounds(true);
-    this.scene.physics.add.collider(this, this.scene.platforms);
   }
   
   private setupControls(): void {

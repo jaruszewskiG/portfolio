@@ -26,7 +26,7 @@ export class PlayerRifleBullet extends Phaser.Physics.Arcade.Sprite {
   private initialSetup(): void {
     this.scene.physics.world.enable(this);
     this.scene.add.existing(this);
-    this.setFrame('Bullet_4', true, false);
+    this.setFrame('Bullet_5', true, false);
     this.setOrigin(0.5, 0.5);
     this.setVelocity(this.velocityX, this.velocityY);
     this.setGravityY(-this.scene.physics.config.gravity!.y!);

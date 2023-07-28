@@ -35,7 +35,7 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
     this.scene.add.existing(this);
     this.setFrame('Rifle_4_1', true, false);
     this.setOrigin(0.1, 0.5);
-    this.setDepth(this.arms.depth - 1);
+    this.setDepth(2);
     this.setupControls();
     this.setupBullets();
   }
@@ -80,11 +80,12 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
       }
 
       const bulletVelocity = this.getBulletVelocity(700);
+      const bulletPositionOffsets = this.getBulletPositionOffsets();
 
       if (this.flipX) {
-        this.bullets.add(new PlayerRifleBullet(this.scene, this.x, this.y, -bulletVelocity.x, bulletVelocity.y, -this.arms.pointerAngle));
+        this.bullets.add(new PlayerRifleBullet(this.scene, this.x - bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, -bulletVelocity.x, bulletVelocity.y, -this.arms.pointerAngle));
       } else {
-        this.bullets.add(new PlayerRifleBullet(this.scene, this.x, this.y, bulletVelocity.x, bulletVelocity.y, this.arms.pointerAngle));
+        this.bullets.add(new PlayerRifleBullet(this.scene, this.x + bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, bulletVelocity.x, bulletVelocity.y, this.arms.pointerAngle));
       }
 
       this.lastBulletFireTime = performance.now();
@@ -92,10 +93,17 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
   }
 
   private getBulletVelocity(baseVelocity: number) {
-    const velocityX = baseVelocity * Math.cos(this.arms.pointerAngle);
-    const velocityY = baseVelocity * Math.sin(this.arms.pointerAngle);
+    return {
+      x: baseVelocity * Math.cos(this.arms.pointerAngle),
+      y: baseVelocity * Math.sin(this.arms.pointerAngle),
+    };
+  }
 
-    return { x: velocityX, y: velocityY };
+  private getBulletPositionOffsets() {
+    return {
+      x: Math.cos(this.arms.pointerAngle) * 31 + Math.sin(this.arms.pointerAngle) * 3,
+      y: Math.sin(this.arms.pointerAngle) * 31 - Math.cos(this.arms.pointerAngle) * 3,
+    }
   }
 
   private setupBullets() {

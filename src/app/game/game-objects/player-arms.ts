@@ -99,6 +99,7 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
         }
         break;
       case PlayerActionStates.JUMP:
+      case PlayerActionStates.FALL:
         this.playerActionStateOffsetY = -5;
 
         if (this.flipX) {
@@ -175,7 +176,7 @@ export class PlayerArms extends Phaser.GameObjects.Sprite {
     this.scene.add.existing(this);
     this.setFrame('Arms_1', true, false);
     this.setOrigin(0.5, 0);
-    this.setDepth(2);
+    this.setDepth(1);
     this.scene.input.on('pointerdown', () => this.scene.input.mouse.requestPointerLock(), this);
     this.playerWieldingStateChange(initialWieldingState);
   }
