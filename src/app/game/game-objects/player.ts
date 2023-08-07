@@ -48,6 +48,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.arms.update();
     this.anims.play(PlayerAnimations.DEATH);
     this.setVelocityY(200);
+    this.scene.physics.pause();
+    this.scene.isGameOver = true;
   }
   
   private setupPlayer(): void {

@@ -4,10 +4,12 @@ import Phaser from 'phaser';
 
 import { Player } from './game-objects/player';
 import { IMainScene } from './models/main-scene.model';
+import { Enemy } from './game-objects/enemy';
 
 class MainScene extends Phaser.Scene implements IMainScene {
   platforms: Phaser.Tilemaps.TilemapLayer;
   player: Player;
+  enemies: Phaser.Physics.Arcade.Group;
   stars: Phaser.Physics.Arcade.Group;
   bombs:  Phaser.Physics.Arcade.Group;
   score: number = 0;
@@ -29,7 +31,9 @@ class MainScene extends Phaser.Scene implements IMainScene {
     this.load.image('ground', 'assets/images/platform.png');
     this.load.image('star', 'assets/images/star.png');
     this.load.image('bomb', 'assets/images/bomb.png');
+    this.load.image('sight', 'assets/images/sight.png');
     this.load.atlas('Biker', 'assets/images/Biker/Biker.png', 'assets/images/Biker/Biker.json');
+    this.load.atlas('Enemy', 'assets/images/Enemies/Enemy/Enemy.png', 'assets/images/Enemies/Enemy/Enemy.json');
     this.load.atlas('Biker_arms', 'assets/images/Biker/Biker_arms.png', 'assets/images/Biker/Biker_arms.json');
     this.load.atlas('Biker_rifle', 'assets/images/Biker/Biker_rifles.png', 'assets/images/Biker/Biker_rifles.json');
     this.load.atlas('Biker_rifle_bullet', 'assets/images/Biker/Biker_rifle_bullets.png', 'assets/images/Biker/Biker_rifle_bullets.json');
@@ -41,9 +45,10 @@ class MainScene extends Phaser.Scene implements IMainScene {
   create(): void {
     this.createBackground();
     this.player = new Player(this, 100, 150);
+    this.setupEnemies();
     this.createTilemap();
     this.createPlatforms();
-    this.createStars();
+    //this.createStars();
     this.createScore();
     this.createBombs();
 
@@ -59,6 +64,17 @@ class MainScene extends Phaser.Scene implements IMainScene {
     }
 
     this.player.update(time, delta);
+  }
+
+  private setupEnemies() {
+    this.enemies = this.physics.add.group({ classType: Enemy, runChildUpdate: true });
+    (this.enemies.defaults as {}) = {}
+
+    this.enemies = this.enemies
+      .add(new Enemy(this, 300, 150))
+      .add(new Enemy(this, 470, 150))
+      .add(new Enemy(this, 500, 150))
+      .add(new Enemy(this, 700, 150));
   }
 
   private createBackground(): void {
@@ -79,6 +95,7 @@ class MainScene extends Phaser.Scene implements IMainScene {
 
     this.platforms.setCollisionBetween(1, this.platforms.tilesTotal, true, false);
     this.physics.add.collider(this.player, this.platforms);
+    this.physics.add.collider(this.enemies, this.platforms);
 
     // Loop through all tiles and remove collisions between adjastent tiles
     this.platforms.forEachTile(tile => {

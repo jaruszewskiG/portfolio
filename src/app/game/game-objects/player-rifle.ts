@@ -1,3 +1,4 @@
+import { getBulletVelocity } from "../helpers/bullet";
 import { IMainScene } from "../models/main-scene.model";
 import { PlayerArms } from "./player-arms";
 import { PlayerRifleBullet } from "./player-rifle-bullet";
@@ -79,24 +80,17 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
         return;
       }
 
-      const bulletVelocity = this.getBulletVelocity(700);
+      const bulletVelocity = getBulletVelocity(700, this.arms.pointerAngle);
       const bulletPositionOffsets = this.getBulletPositionOffsets();
 
       if (this.flipX) {
-        this.bullets.add(new PlayerRifleBullet(this.scene, this.x - bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, -bulletVelocity.x, bulletVelocity.y, -this.arms.pointerAngle));
+        this.bullets.add(new PlayerRifleBullet(this.scene, this.x - bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, -bulletVelocity.x, bulletVelocity.y, -this.arms.pointerAngle, this.scene.enemies));
       } else {
-        this.bullets.add(new PlayerRifleBullet(this.scene, this.x + bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, bulletVelocity.x, bulletVelocity.y, this.arms.pointerAngle));
+        this.bullets.add(new PlayerRifleBullet(this.scene, this.x + bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, bulletVelocity.x, bulletVelocity.y, this.arms.pointerAngle, this.scene.enemies));
       }
 
       this.lastBulletFireTime = performance.now();
     }
-  }
-
-  private getBulletVelocity(baseVelocity: number) {
-    return {
-      x: baseVelocity * Math.cos(this.arms.pointerAngle),
-      y: baseVelocity * Math.sin(this.arms.pointerAngle),
-    };
   }
 
   private getBulletPositionOffsets() {
