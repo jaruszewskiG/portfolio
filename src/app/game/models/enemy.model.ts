@@ -2,8 +2,6 @@ export enum EnemyAnimations {
     IDLE = 'Idle',
     WALK = 'Walk',
     DEATH = 'Death',
-    FIRE_DOWN = 'FireDown',
-    FIRE_UP = 'FireUp',
     FIRE_MIDDLE = 'FireMiddle',
 }
 

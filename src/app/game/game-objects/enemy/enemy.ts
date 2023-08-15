@@ -1,53 +1,12 @@
-import { getBulletVelocity } from "../helpers/bullet";
-import { EnemyActionStates, EnemyAnimations, EnemyIdleActionStates } from "../models/enemy.model";
-import { IMainScene } from "../models/main-scene.model";
-import StateMachine from "../state-machine";
-import { PlayerRifleBullet } from "./player-rifle-bullet";
+import { getBulletVelocity } from "../../helpers/bullet";
+import { EnemyActionStates, EnemyAnimations, EnemyIdleActionStates } from "../../models/enemy.model";
+import { IMainScene } from "../../models/main-scene.model";
+import StateMachine from "../../state-machine";
+import { Bullet } from "../shared/bullet";
+import { EnemySightInstance } from "./enemy-sight-instance";
 
 const KEY: string = 'Enemy';
 const DEFAULT_FRAME_RATE = 10;
-
-class EnemySightInstance extends Phaser.Physics.Arcade.Sprite {
-  private enemy: Enemy;
-  private velocityX: number;
-  private velocityY: number;
-
-  constructor(
-    public override scene: IMainScene,
-    x: number,
-    y: number,
-    velocityX: number,
-    velocityY: number,
-    enemy: Enemy,
-  ) {
-    super(scene, x, y, 'sight');
-
-    this.enemy = enemy;
-    this.velocityX = velocityX;
-    this.velocityY = velocityY;
-
-    this.initialSetup();
-  }
-
-  private initialSetup(): void {
-    this.scene.physics.world.enable(this);
-    this.scene.add.existing(this);
-    this.setOrigin(0.5, 0.5);
-    this.setVelocity(this.velocityX, this.velocityY);
-    this.setGravityY(-this.scene.physics.config.gravity!.y!);
-
-    // The ms parameter here is in fact a range of the sight
-    setTimeout(() => this.destroy(), 360);
-
-    this.scene.physics.add.collider(this, this.scene.platforms, () => this.destroy(), undefined, this);
-    this.scene.physics.add.overlap(this, this.scene.player, this.playerDetected, undefined, this);
-  }
-
-  private playerDetected() {
-    this.enemy.playerDetected();
-    this.destroy();
-  }
-}
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private stateMachine: StateMachine;
@@ -57,6 +16,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private lastTimeTargetWasVisible = 0;
   private isAlive = true;
   private runningIntervals: NodeJS.Timer[] = [];
+  public hitpoints: number = 3;
 
   private get timeSinceTargetWasVisible(): number {
     return performance.now() - this.lastTimeTargetWasVisible;
@@ -70,14 +30,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, KEY);
   
     this.init();
-    this.setupColliders();
-    this.setupAnimations();
-    this.setAcceleration(0, 800);
-    this.setupStateMachine();
-
-    this.setOrigin(0.5, 1);
-    this.flipX = true;
   }
+
+  // PUBLIC FUNCTIONS
   
   public override update(time: number, delta: number) {
     if (this.isAlive) {
@@ -85,11 +40,51 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setSize(this.width, this.height);
     }
   }
+
+  public playerDetected() {
+    if (this.isAlive) {
+      this.isTargetDetected = true;
+      this.lastTimeTargetWasVisible = performance.now();
+  
+      this.stateMachine.setState(EnemyActionStates.FIRE);
+    }
+  }
+
+  public hit(damage: number): void {
+    this.hitpoints -= damage;
+    
+    if (this.hitpoints < 1) {
+      this.die();
+    } else {
+      this.tint = 0xff0000;
+      
+      setTimeout(() => this.clearTint(), 50);
+    }
+  }
+
+  public die() {
+    this.stateMachine.setState(EnemyActionStates.DEATH);
+    this.disableBody();
+  }
+
+  // INIT FUNCTIONS
   
   private init(): void {
     this.scene.physics.world.enable(this);
     this.scene.add.existing(this);
 
+    this.setupRunningIntervals();
+    this.setCollideWorldBounds(true);
+    this.setupAnimations();
+    this.setAcceleration(0, 800);
+    this.setupStateMachine();
+
+    this.setOrigin(0.5, 1);
+    this.flipX = true;
+  }
+
+  private setupRunningIntervals(): void {
+    console.log('setup intervals')
     this.runningIntervals.push(setInterval(() => {
       if (!this.isTargetDetected) {
         this.setRandomState();
@@ -103,16 +98,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       // Bottom sight instance
       this.createSightInstanceAtTarget(this.scene.player.x, this.scene.player.y - 1);
     }, 100))
-  }
-
-  public playerDetected() {
-    if (this.isAlive) {
-      this.isTargetDetected = true;
-      this.lastTimeTargetWasVisible = performance.now();
-  
-      this.angleBetweenEnemyAndPlayer = Phaser.Math.Angle.Between(this.x, this.y - this.height * 0.8, this.scene.player.x, this.scene.player.y - this.scene.player.height / 2 - 8);
-      this.stateMachine.setState(EnemyActionStates.FIRE);
-    }
   }
 
   private createSightInstanceAtTarget(targetX: number, targetY: number) {
@@ -148,10 +133,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.flipX = !this.flipX;
     }
   }
-  
-  private setupColliders() {
-    this.setCollideWorldBounds(true);
-  }
 
   private setupAnimations(): void {
     this.anims.create({
@@ -175,23 +156,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     });
 
     this.anims.create({
-      key: EnemyAnimations.FIRE_UP,
-      frames: this.anims.generateFrameNames(KEY, { prefix: `${EnemyAnimations.FIRE_UP}_`, end: 2 }),
-      frameRate: DEFAULT_FRAME_RATE,
-    });
-
-    this.anims.create({
       key: EnemyAnimations.FIRE_MIDDLE,
       frames: this.anims.generateFrameNames(KEY, { prefix: `${EnemyAnimations.FIRE_MIDDLE}_`, end: 2 }),
       frameRate: DEFAULT_FRAME_RATE,
     });
-
-    this.anims.create({
-      key: EnemyAnimations.FIRE_DOWN,
-      frames: this.anims.generateFrameNames(KEY, { prefix: `${EnemyAnimations.FIRE_DOWN}_`, end: 2 }),
-      frameRate: DEFAULT_FRAME_RATE,
-    });
   }
+
+  // STATE MACHINE SETUP
 
   private setupStateMachine(): void {
     this.stateMachine = new StateMachine(this, 'enemy');
@@ -199,7 +170,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       .addState({
         name: EnemyActionStates.IDLE,
         onEnter: this.onIdleEnter,
-        onUpdate: this.onIdleUpdate,
       })
       .addState({
         name: EnemyActionStates.WALK,
@@ -223,10 +193,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setVelocity(0);
 
     this.anims.play(EnemyAnimations.IDLE);
-  }
-
-  private onIdleUpdate(): void {
-
   }
 
   private onWalkEnter(): void {
@@ -254,15 +220,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.preventFromFalling();
   }
 
-  private preventFromFalling(): void {
-    if (
-        !this.scene.tilemap.getTileAtWorldXY(this.x - this.width / 2 - 2, this.y) && this.flipX ||
-        !this.scene.tilemap.getTileAtWorldXY(this.x + this.width / 2 + 2, this.y) && !this.flipX
-    ) {
-        this.stateMachine.setState(EnemyActionStates.IDLE);
-    }
-  }
-
   private onFireEnter(): void {
     this.setVelocity(0);
     this.anims.play(EnemyAnimations.FIRE_MIDDLE);
@@ -280,24 +237,38 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private fireAtTarget(): void {
-    const bulletVelocity = getBulletVelocity(700, this.angleBetweenEnemyAndPlayer);
-
-    if (this.flipX) {
-      new PlayerRifleBullet(this.scene, this.x, this.y - this.height / 2 - 4, bulletVelocity.x, bulletVelocity.y, this.angleBetweenEnemyAndPlayer, this.scene.player);
-    } else {
-      new PlayerRifleBullet(this.scene, this.x, this.y - this.height / 2 - 4, bulletVelocity.x, bulletVelocity.y, this.angleBetweenEnemyAndPlayer, this.scene.player);
-    }
-  }
-
   private onDeathEnter(): void {
     this.anims.play(EnemyAnimations.DEATH);
     this.isAlive = false;
-    this.runningIntervals.map(runningInterval => clearInterval(runningInterval));
+    this.destroyRunningIntervals();
   }
 
-  public die() {
-    this.stateMachine.setState(EnemyActionStates.DEATH);
-    this.disableBody();
+  // PRIVATE FUNCTIONS
+
+  private preventFromFalling(): void {
+    if (
+        !this.scene.tilemap.getTileAtWorldXY(this.x - this.width / 2 - 2, this.y) && this.flipX ||
+        !this.scene.tilemap.getTileAtWorldXY(this.x + this.width / 2 + 2, this.y) && !this.flipX
+    ) {
+        this.stateMachine.setState(EnemyActionStates.IDLE);
+    }
+  }
+
+  private fireAtTarget(): void {
+    this.angleBetweenEnemyAndPlayer = Phaser.Math.Angle.Between(this.x, this.y - this.height * 0.8, this.scene.player.x, this.scene.player.y - this.scene.player.height / 2 - 8);
+
+    const bulletVelocity = getBulletVelocity(300, this.angleBetweenEnemyAndPlayer);
+
+    if (this.flipX) {
+      new Bullet(this.scene, this.x, this.y - this.height / 2 - 4, bulletVelocity.x, bulletVelocity.y, this.angleBetweenEnemyAndPlayer, this.scene.player, 'Bullet_11', 2);
+    } else {
+      new Bullet(this.scene, this.x, this.y - this.height / 2 - 4, bulletVelocity.x, bulletVelocity.y, this.angleBetweenEnemyAndPlayer, this.scene.player, 'Bullet_11', 2);
+    }
+  }
+
+  private destroyRunningIntervals(): void {
+    this.runningIntervals.map(runningInterval => clearInterval(runningInterval));
+    this.runningIntervals = [];
+    console.log('destroyed intervals');
   }
 }

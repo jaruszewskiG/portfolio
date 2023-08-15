@@ -1,5 +1,4 @@
-import { Enemy } from "../game-objects/enemy";
-import { Player } from "../game-objects/player";
+import { Player } from "../game-objects/player/player";
 
 export interface IMainScene extends Phaser.Scene {
   platforms: Phaser.Tilemaps.TilemapLayer;
@@ -7,8 +6,7 @@ export interface IMainScene extends Phaser.Scene {
   enemies: Phaser.Physics.Arcade.Group;
   stars: Phaser.Physics.Arcade.Group;
   bombs:  Phaser.Physics.Arcade.Group;
-  score: number;
-  scoreText: Phaser.GameObjects.Text;
+  hitpointsText: Phaser.GameObjects.Text;
   isGameOver: boolean;
   gameOverText: Phaser.GameObjects.Text;
   tilemap: Phaser.Tilemaps.Tilemap;

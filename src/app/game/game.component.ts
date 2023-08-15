@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 
 import Phaser from 'phaser';
 
-import { Player } from './game-objects/player';
+import { Player } from './game-objects/player/player';
 import { IMainScene } from './models/main-scene.model';
-import { Enemy } from './game-objects/enemy';
+import { Enemy } from './game-objects/enemy/enemy';
 
 class MainScene extends Phaser.Scene implements IMainScene {
   platforms: Phaser.Tilemaps.TilemapLayer;
@@ -12,8 +12,7 @@ class MainScene extends Phaser.Scene implements IMainScene {
   enemies: Phaser.Physics.Arcade.Group;
   stars: Phaser.Physics.Arcade.Group;
   bombs:  Phaser.Physics.Arcade.Group;
-  score: number = 0;
-  scoreText: Phaser.GameObjects.Text;
+  hitpointsText: Phaser.GameObjects.Text;
   isGameOver: boolean = false;
   gameOverText: Phaser.GameObjects.Text;
   tilemap: Phaser.Tilemaps.Tilemap;
@@ -28,9 +27,6 @@ class MainScene extends Phaser.Scene implements IMainScene {
     this.load.setBaseURL('');
 
     this.load.image('sky', 'assets/images/Background.png');
-    this.load.image('ground', 'assets/images/platform.png');
-    this.load.image('star', 'assets/images/star.png');
-    this.load.image('bomb', 'assets/images/bomb.png');
     this.load.image('sight', 'assets/images/sight.png');
     this.load.atlas('Biker', 'assets/images/Biker/Biker.png', 'assets/images/Biker/Biker.json');
     this.load.atlas('Enemy', 'assets/images/Enemies/Enemy/Enemy.png', 'assets/images/Enemies/Enemy/Enemy.json');
@@ -48,9 +44,7 @@ class MainScene extends Phaser.Scene implements IMainScene {
     this.setupEnemies();
     this.createTilemap();
     this.createPlatforms();
-    //this.createStars();
-    this.createScore();
-    this.createBombs();
+    this.createHitpoints();
 
     this.cameras.main.setBounds(0, 0, 1920, 600);
     this.physics.world.setBounds(0, 0, 1920, window.innerHeight);
@@ -58,12 +52,13 @@ class MainScene extends Phaser.Scene implements IMainScene {
   }
 
   override update(time: number, delta: number): void {
-    if (this.isGameOver) {
+    if (this.isGameOver && !this.gameOverText) {
+      this.cameras.main.stopFollow();
       this.createGameOverText();
-      return;
     }
 
     this.player.update(time, delta);
+    this.hitpointsText.setText('LIFE: ' + this.player.hitpoints);
   }
 
   private setupEnemies() {
@@ -119,67 +114,16 @@ class MainScene extends Phaser.Scene implements IMainScene {
     });
   }
 
-  private createStars(): void {
-    const collectStar = (player: Phaser.GameObjects.GameObject, star: Phaser.GameObjects.GameObject): void => {
-      (star as Phaser.Physics.Arcade.Sprite).disableBody(true, true);
-  
-      this.score += 10;
-      this.scoreText.setText('SCORE: ' + this.score);
-
-      if (this.stars.countActive(true) === 0) {
-        this.stars.children.iterate(star => {
-          (star as Phaser.Physics.Arcade.Sprite).enableBody(true, (star as Phaser.Physics.Arcade.Sprite).x, 0, true, true);
-        });
-
-        this.createBomb();
-      }
-    }
-
-    this.stars = this.physics.add.group({
-      key: 'star',
-      repeat: 11,
-      setXY: { x: 12, y: 0, stepX: 70 }
-    });
-    
-    this.stars.children.iterate(star => {
-      (star as Phaser.Physics.Arcade.Sprite).setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
-    });
-
-    this.physics.add.collider(this.stars, this.platforms);
-    this.physics.add.overlap(this.player, this.stars, collectStar, undefined, this);
-  }
-
-  private createScore(): void {
-    this.scoreText = this.add.text(16, 16, 'SCORE: 0', { fontSize: '32px', color: 'black', stroke: 'black', strokeThickness: 2 });
-    this.scoreText.setScrollFactor(0);
+  private createHitpoints(): void {
+    this.hitpointsText = this.add.text(16, 16, `LIFE: ${this.player.hitpoints}`, { fontSize: '32px', color: 'black', stroke: 'black', strokeThickness: 2 });
+    this.hitpointsText.setScrollFactor(0);
   }
 
   private createGameOverText(): void {
     const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
     const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
 
-    this.gameOverText = this.add.text(screenCenterX, screenCenterY, 'GAME OVER', { fontSize: '64px', color: 'red', stroke: 'red', strokeThickness: 2 }).setOrigin(0.5);
-  }
-
-  private createBombs(): void {
-    const hitBomb = (): void => {
-      this.player.die();
-      this.physics.pause();
-      this.isGameOver = true;
-    }
-
-    this.bombs = this.physics.add.group();
-    this.physics.add.collider(this.bombs, this.platforms);
-    this.physics.add.collider(this.player, this.bombs, hitBomb, undefined, this);
-  }
-
-  private createBomb(): void {
-    const x = (this.player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-
-    const bomb = this.bombs.create(x, 16, 'bomb');
-    bomb.setBounce(1);
-    bomb.setCollideWorldBounds(true);
-    bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+    this.gameOverText = this.add.text(screenCenterX, screenCenterY, 'WASTED', { fontSize: '64px', color: 'red', stroke: 'red', strokeThickness: 2 }).setOrigin(0.5);
   }
 }
 

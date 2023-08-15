@@ -1,8 +1,8 @@
 import { EventEmitter } from "@angular/core";
 
-import { capitalizeString } from "../helpers/string.helpers";
-import { IMainScene } from "../models/main-scene.model";
-import { PlayerAnimations, PlayerWieldingStates, PlayerActionStates } from "../models/player.model";
+import { capitalizeString } from "../../helpers/string.helpers";
+import { IMainScene } from "../../models/main-scene.model";
+import { PlayerAnimations, PlayerWieldingStates, PlayerActionStates } from "../../models/player.model";
 import { Player } from './player';
 import { PlayerRifle } from './player-rifle';
 
