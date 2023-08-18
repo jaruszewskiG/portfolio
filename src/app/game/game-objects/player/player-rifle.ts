@@ -1,6 +1,7 @@
-import { IMainScene } from "../models/main-scene.model";
+import { getBulletVelocity } from "../../helpers/bullet";
+import { IMainScene } from "../../models/main-scene.model";
 import { PlayerArms } from "./player-arms";
-import { PlayerRifleBullet } from "./player-rifle-bullet";
+import { Bullet } from "../shared/bullet";
 
 const KEY: string = 'Biker_rifle';
 
@@ -79,24 +80,17 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
         return;
       }
 
-      const bulletVelocity = this.getBulletVelocity(700);
+      const bulletVelocity = getBulletVelocity(700, this.arms.pointerAngle);
       const bulletPositionOffsets = this.getBulletPositionOffsets();
 
       if (this.flipX) {
-        this.bullets.add(new PlayerRifleBullet(this.scene, this.x - bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, -bulletVelocity.x, bulletVelocity.y, -this.arms.pointerAngle));
+        this.bullets.add(new Bullet(this.scene, this.x - bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, -bulletVelocity.x, bulletVelocity.y, -this.arms.pointerAngle, this.scene.enemies));
       } else {
-        this.bullets.add(new PlayerRifleBullet(this.scene, this.x + bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, bulletVelocity.x, bulletVelocity.y, this.arms.pointerAngle));
+        this.bullets.add(new Bullet(this.scene, this.x + bulletPositionOffsets.x, this.y + bulletPositionOffsets.y, bulletVelocity.x, bulletVelocity.y, this.arms.pointerAngle, this.scene.enemies));
       }
 
       this.lastBulletFireTime = performance.now();
     }
-  }
-
-  private getBulletVelocity(baseVelocity: number) {
-    return {
-      x: baseVelocity * Math.cos(this.arms.pointerAngle),
-      y: baseVelocity * Math.sin(this.arms.pointerAngle),
-    };
   }
 
   private getBulletPositionOffsets() {
@@ -107,7 +101,7 @@ export class PlayerRifle extends Phaser.GameObjects.Sprite {
   }
 
   private setupBullets() {
-    this.bullets = this.scene.physics.add.group({ classType: PlayerRifleBullet, runChildUpdate: true });
+    this.bullets = this.scene.physics.add.group({ classType: Bullet, runChildUpdate: true });
     (this.bullets.defaults as {}) = {}
   }
 

@@ -1,7 +1,7 @@
-import { capitalizeString } from "../helpers/string.helpers";
-import { IMainScene } from "../models/main-scene.model";
-import { PlayerActionStates, PlayerAnimations, PlayerWieldingStates } from "../models/player.model";
-import StateMachine from "../state-machine";
+import { capitalizeString } from "../../helpers/string.helpers";
+import { IMainScene } from "../../models/main-scene.model";
+import { PlayerActionStates, PlayerAnimations, PlayerWieldingStates } from "../../models/player.model";
+import StateMachine from "../../state-machine";
 import { PlayerArms } from "./player-arms";
 
 const KEY: string = 'Biker';
@@ -13,6 +13,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private stateMachine: StateMachine;
   private wieldingStateMachine: StateMachine;
   private arms: PlayerArms;
+  public hitpoints: number = 10;
 
   constructor(
     public override scene: IMainScene,
@@ -41,13 +42,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setSize(this.width, this.height);
     this.arms.update();
   }
+
+  public hit(damage: number): void {
+    if (this.stateMachine.currentStateName === PlayerActionStates.DEATH) {
+      return;
+    }
+
+    this.hitpoints -= damage;
+    
+    if (this.hitpoints < 1) {
+      this.die();
+    } else {
+      this.tint = 0xff0000;
+      
+      setTimeout(() => this.clearTint(), 50);
+    }
+  }
   
   public die(): void {
+    this.stateMachine.setState(PlayerActionStates.DEATH);
     this.wieldingStateMachine.setState(PlayerWieldingStates.NOTHING);
     this.arms.playerWieldingStateChange(this.wieldingStateMachine.currentStateName as PlayerWieldingStates);
     this.arms.update();
-    this.anims.play(PlayerAnimations.DEATH);
-    this.setVelocityY(200);
+    this.scene.isGameOver = true;
   }
   
   private setupPlayer(): void {
@@ -136,6 +153,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .addState({
         name: PlayerActionStates.FALL,
         onUpdate: this.onFallUpdate
+      })
+      .addState({
+        name: PlayerActionStates.DEATH,
+        onEnter: this.onDeathEnter,
+        onUpdate: this.onDeathUpdate,
       })
 
     this.stateMachine.setState(PlayerActionStates.IDLE);
@@ -332,6 +354,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.flipX = false;
     } else {
       this.setVelocityX(0);
+    }
+  }
+
+  private onDeathEnter(): void {
+    this.anims.play(PlayerAnimations.DEATH);
+  }
+
+  private onDeathUpdate(): void {
+    if (this.stateMachine.currentStateName === PlayerActionStates.DEATH && (this.body as Phaser.Physics.Arcade.Body).onFloor()) {
+      setTimeout(() => this.disableBody(), 10)
     }
   }
 }
